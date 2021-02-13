@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,6 +13,10 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final _firestore = Firestore.instance;
+  final _auth = FirebaseAuth.instance;
+  String messagesText;
+
   String groupChatId;
   String userID;
 
@@ -37,6 +42,14 @@ class _ChatPageState extends State<ChatPage> {
       groupChatId = '$anotherUserId - $userID';
     }
     setState(() {});
+  }
+
+//step_1 //get messages from firebase
+  void getMessages() async {
+    final messages = await _firestore.collection('messages').getDocuments();
+    for (var message in messages.documents) {
+      print("daata provked: ${message.data}");
+    }
   }
 
   @override
@@ -72,9 +85,16 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.send),
-                      onPressed: () => sendMsg(),
-                    ),
+                        icon: Icon(Icons.send),
+                        onPressed: () {
+                          sendMsg();
+                          getMessages();
+                        }
+
+                        // onPressed: () {
+                        //   getMessages();
+                        // },
+                        ),
                   ],
                 ),
               ],
@@ -96,6 +116,7 @@ class _ChatPageState extends State<ChatPage> {
 
   sendMsg() {
     String msg = textEditingController.text.trim();
+    print(msg);
 
     /// Upload images to firebase and returns a URL
     if (msg.isNotEmpty) {
@@ -124,6 +145,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   buildItem(doc) {
+    //print("asdsad///////////" + doc.toString());
     return Padding(
       padding: EdgeInsets.only(
           top: 8.0,
@@ -139,7 +161,7 @@ class _ChatPageState extends State<ChatPage> {
             borderRadius: BorderRadius.circular(8.0)),
         child: (doc['tyoe'] == 'text')
             ? Text('${doc['content']}')
-            : Image.network(doc['content']),
+            : Text(doc['content']),
       ),
     );
   }
